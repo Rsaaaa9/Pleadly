@@ -110,29 +110,19 @@ After optimizing 50+ real resumes, the patterns crystallized into a repeatable 4
 
 ## Advanced Usage / 进阶用法
 
-### As a Claude Code Custom Agent
+### Option A: Claude Code Agent (one-command trigger)
 
-Add this to your `.claude/agents/job-fit-check.md`:
+If you use [Claude Code](https://claude.ai/code):
 
-```markdown
----
-name: job-fit-check
-description: Analyze a job JD + resume and output a full diagnostic report
-tools: Read, Write, WebFetch
----
+1. Copy [`job-fit-check-agent.md`](job-fit-check-agent.md) to `~/.claude/agents/job-fit-check.md`
+2. In Claude Code, type `/job-fit-check`
+3. Paste your JD + resume. The agent runs all 4 steps automatically.
 
-When the user provides a resume and a job description, execute the following
-4-step workflow in order. Output each step clearly, then proceed to the next.
+That's it. One command, full diagnostic report.
 
-Step 1: Load and execute prompts/job-analysis.md
-Step 2: Load and execute prompts/resume-diagnosis.md
-Step 3: Load and execute prompts/resume-rewrite.md
-Step 4: Load and execute prompts/final-output.md
+### Option B: Manual copy-paste (no tools needed)
 
-After completing all 4 steps, offer to write the final resume to a file.
-```
-
-Then trigger with: `/job-fit-check`
+Open each file in [`prompts/`](prompts/), copy the prompt, paste into ChatGPT / Claude / Kimi / DeepSeek. Fill in `[PASTE JD HERE]` and `[PASTE RESUME HERE]` placeholders. Run them in order (① → ② → ③ → ④).
 
 ### As a GitHub Action / CI
 
