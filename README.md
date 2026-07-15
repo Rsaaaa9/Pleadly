@@ -53,22 +53,30 @@ A **prompt-based workflow** that transforms how fresh graduates match their resu
 
 ## Quick Start / 快速开始
 
-### Option 1: One-by-one (more control)
+### 🥇 最简单 / Easiest: Claude Code (1 条命令 / 1 command)
 
-Copy each prompt in order, paste into your preferred LLM with your data.
+```bash
+# 1. Clone the repo
+git clone https://github.com/Rsaaaa9/job-fit-check.git
 
-1. Open [`prompts/job-analysis.md`](prompts/job-analysis.md) → Copy → Paste into LLM → Get analysis
-2. Open [`prompts/resume-diagnosis.md`](prompts/resume-diagnosis.md) → Copy → Paste into LLM (with the analysis above) → Get diagnosis
-3. Open [`prompts/resume-rewrite.md`](prompts/resume-rewrite.md) → Copy → Paste → Get rewrite suggestions
-4. Open [`prompts/final-output.md`](prompts/final-output.md) → Copy → Paste → Get final polished resume
+# 2. Enter the directory
+cd job-fit-check
 
-### Option 2: All-in-one (faster)
+# 3. Start Claude Code — the workflow loads AUTOMATICALLY via CLAUDE.md
+claude
+```
 
-Copy all 4 prompts, chain them into one mega-prompt, and feed your resume + JD once.
+Then type: "这是我的简历[粘贴简历]，这是岗位JD[粘贴JD]，帮我分析。" That's it — Claude Code reads `CLAUDE.md` and automatically executes the 4-step workflow. **No setup. No configuration. No agent registration.**
 
-### Option 3: Claude Code / SDK Agent
+> 进入目录后启动 Claude Code，工作流通过 `CLAUDE.md` 自动加载。不需要任何配置，直接把简历和 JD 贴进去就行。
 
-If you use [Claude Code](https://claude.ai/code), you can wire these prompts into a custom agent that triggers with one command. See [Advanced Usage](#advanced-usage--进阶用法) below.
+### 🥈 Copy-paste (any AI tool / 任何 AI 工具都能用)
+
+Open each file in [`prompts/`](prompts/), copy the prompt, paste into ChatGPT / Claude / Kimi / DeepSeek. Fill in `[PASTE JD HERE]` and `[PASTE RESUME HERE]`. Run them in order (① → ② → ③ → ④).
+
+### 🥉 One-command agent (for Claude Code power users)
+
+Copy [`job-fit-check-agent.md`](job-fit-check-agent.md) to `~/.claude/agents/job-fit-check.md`, then type `/job-fit-check` in Claude Code. Same result, slightly faster to trigger.
 
 ---
 
@@ -108,25 +116,25 @@ After optimizing 50+ real resumes, the patterns crystallized into a repeatable 4
 
 ---
 
-## Advanced Usage / 进阶用法
+## How It Works / 原理
 
-### Option A: Claude Code Agent (one-command trigger)
+This repo uses **CLAUDE.md** — a file that Claude Code automatically reads when you enter the directory. No installation, no plugins, no agent registration. Just `cd` in and go.
 
-If you use [Claude Code](https://claude.ai/code):
+这个仓库使用 CLAUDE.md 文件——Claude Code 进入目录时自动读取。无需安装、无需插件、无需注册 agent。进入目录就行。
 
-1. Copy [`job-fit-check-agent.md`](job-fit-check-agent.md) to `~/.claude/agents/job-fit-check.md`
-2. In Claude Code, type `/job-fit-check`
-3. Paste your JD + resume. The agent runs all 4 steps automatically.
+For non-Claude-Code users, the individual prompts live in [`prompts/`](prompts/) and work with any LLM.
 
-That's it. One command, full diagnostic report.
+---
 
-### Option B: Manual copy-paste (no tools needed)
+## Advanced / 进阶
 
-Open each file in [`prompts/`](prompts/), copy the prompt, paste into ChatGPT / Claude / Kimi / DeepSeek. Fill in `[PASTE JD HERE]` and `[PASTE RESUME HERE]` placeholders. Run them in order (① → ② → ③ → ④).
+### As a Claude Code slash command
 
-### As a GitHub Action / CI
+Copy [`job-fit-check-agent.md`](job-fit-check-agent.md) to `~/.claude/agents/job-fit-check.md`, then trigger with `/job-fit-check` from any directory.
 
-Coming soon — automatically run job-fit-check on every PR that modifies your resume LaTeX/Markdown file.
+### GitHub Action (coming soon)
+
+Auto-analyze your resume against a JD on every PR.
 
 ---
 
