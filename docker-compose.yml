@@ -1,18 +1,19 @@
-# ── Pleadly 本地/生产 Docker 部署 ──
-# 启动: docker compose up -d
-# 查看日志: docker compose logs -f
-# 停止: docker compose down
+# ── Pleadly 本地/服务器 Docker 部署 ──
+# 启动:   docker compose up -d
+# 查看:   docker compose logs -f
+# 停止:   docker compose down
+# 重建:   docker compose up -d --build
 
 services:
   pleadly:
     build:
-      context: ..
-      dockerfile: deploy/Dockerfile
+      context: .
+      dockerfile: Dockerfile
     container_name: pleadly
     ports:
       - "7860:7860"
     env_file:
-      - ../.env
+      - .env
     environment:
       - APP_PORT=7860
       - CHROMA_PERSIST_PATH=/tmp/chroma_data
