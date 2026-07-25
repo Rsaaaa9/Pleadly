@@ -1,0 +1,30 @@
+# ── Pleadly 本地/生产 Docker 部署 ──
+# 启动: docker compose up -d
+# 查看日志: docker compose logs -f
+# 停止: docker compose down
+
+services:
+  pleadly:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: pleadly
+    ports:
+      - "7860:7860"
+    env_file:
+      - ../.env
+    environment:
+      - APP_PORT=7860
+      - CHROMA_PERSIST_PATH=/tmp/chroma_data
+    volumes:
+      - chroma_data:/tmp/chroma_data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:7860/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  chroma_data:

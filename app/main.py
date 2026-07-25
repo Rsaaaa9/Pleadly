@@ -407,11 +407,24 @@ with gr.Blocks(theme=theme, title="Pleadly — Smart Job Search") as app:
 # LAUNCH
 # ═══════════════════════════════════════════════════════════
 if __name__ == "__main__":
-    print("🚀 Pleadly starting...")
-    print("📡 Local: http://localhost:7860")
-    print("🌐 Bilingual: 中文 | English (toggle buttons in header)")
+    is_hf = os.getenv("SPACE_ID") is not None  # HuggingFace Spaces auto-sets this
+    port = int(os.getenv("APP_PORT", 7860))
+
+    print("╔══════════════════════════════════╗")
+    print("║      🎯 Pleadly — Smart Job     ║")
+    print("║    AI Full-Cycle Career Helper   ║")
+    print("╠══════════════════════════════════╣")
+    if is_hf:
+        print(f"║  🌐 HF Spaces mode              ║")
+    else:
+        print(f"║  📡 Local: http://localhost:{port}  ║")
+    print("║  🌍 中文 / English bilingual    ║")
+    print("╚══════════════════════════════════╝")
+
     app.launch(
         server_name="0.0.0.0",
-        server_port=int(os.getenv("APP_PORT", 7860)),
+        server_port=port,
         share=False,
+        show_error=True,
+        quiet=is_hf,  # Less noisy in production
     )

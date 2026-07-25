@@ -1,3 +1,14 @@
+---
+title: Pleadly — Smart Job Search
+emoji: 🎯
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+license: mit
+short_description: AI-powered full-cycle career assistant — from JD to Day One
+---
+
 # 我求你了 / Pleadly
 
 > AI招聘经理视角的全流程求职助手 — 从JD投递到入职，每一步都有你。
