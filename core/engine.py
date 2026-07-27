@@ -99,15 +99,23 @@ def run_step(
     user_input: AnalysisInput,
     rag_context: str = "",
     previous_steps: Dict[str, str] = None,
+    user_context: str = "",  # v2: 用户信息库检索结果
 ) -> AnalysisResult:
     """Execute one step of the workflow."""
     prompt_template = get_prompt(step)
     if not prompt_template:
         return AnalysisResult(step_name=step, content=f"错误: 未找到步骤 '{step}' 的 Prompt。")
 
-    # Build user prompt
-    system_prompt = f"""你是Pleadly的AI招聘经理。严格按以下要求输出分析结果。禁止编造信息。
-{rag_context if rag_context else ''}"""
+    # Build system prompt with all context
+    context_blocks = []
+    if rag_context:
+        context_blocks.append(rag_context)
+    if user_context:
+        context_blocks.append(user_context)
+
+    system_prompt = "你是Pleadly的AI招聘经理。严格按以下要求输出分析结果。禁止编造信息。\n"
+    if context_blocks:
+        system_prompt += "\n" + "\n".join(context_blocks)
 
     user_prompt = prompt_template.replace("{RESUME}", user_input.resume_text)
     user_prompt = user_prompt.replace("{JD}", user_input.jd_text)

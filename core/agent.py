@@ -124,6 +124,24 @@ def search_salary_data(role: str, city: str = "深圳") -> str:
             all_info.append(f"【{r['title']}】\n{r['snippet']}")
     return "\n\n".join(all_info[:6])
 
+# ── User Library (v2) ──
+
+_user_library_instance = None
+
+def get_user_library():
+    """获取全局用户信息库单例（延迟加载）。"""
+    global _user_library_instance
+    if _user_library_instance is None:
+        from rag.user_library import UserLibrary
+        _user_library_instance = UserLibrary()
+    return _user_library_instance
+
+def reset_user_library():
+    """重置用户信息库实例（用于清空重来）。"""
+    global _user_library_instance
+    _user_library_instance = None
+
+
 # ── Agent Orchestrator ──
 
 @dataclass
@@ -134,16 +152,18 @@ class AgentState:
     salary_research: str = ""
     interview_experiences: str = ""
     step_results: Dict[str, str] = None
+    active_resume_file: str = ""  # v2: 用户选择了哪份简历
 
     def __post_init__(self):
         if self.step_results is None:
             self.step_results = {}
 
 class AgentOrchestrator:
-    """Agent 编排器 — 管理工作流执行顺序和工具调用。"""
+    """Agent 编排器 — 管理工作流执行顺序和工具调用（v2 含用户信息库）。"""
 
     def __init__(self):
         self.state = AgentState()
+        self.user_library = get_user_library()
 
     def set_input(self, resume: str, jd: str):
         self.state.resume_text = resume
@@ -167,7 +187,7 @@ class AgentOrchestrator:
         return f"预研究完成。公司信息: {len(self.state.company_research)}字符。薪资数据: {len(self.state.salary_research)}字符。"
 
     def get_rag_context(self) -> str:
-        """组装RAG检索上下文。"""
+        """组装RAG检索上下文（公共知识库 + 用户信息库）。"""
         parts = []
         if self.state.company_research:
             parts.append(f"## 公司研究\n{self.state.company_research[:3000]}")
@@ -175,4 +195,58 @@ class AgentOrchestrator:
             parts.append(f"## 薪资参考\n{self.state.salary_research[:1500]}")
         if self.state.interview_experiences:
             parts.append(f"## 面经参考\n{self.state.interview_experiences[:2000]}")
+
+        # v2: 添加用户信息库检索结果
+        user_ctx = self.get_user_context(step="resume_diagnosis")
+        if user_ctx:
+            parts.append(user_ctx)
+
         return "\n\n".join(parts)
+
+    # ── v2: 用户信息库 ─────────────────────────────
+
+    def get_user_context(self, step: str = "resume_diagnosis", n_results: int = 5) -> str:
+        """
+        从用户信息库检索并组装上下文。
+        自动按 step 选择最优检索策略。
+        """
+        try:
+            return self.user_library.assemble_context(step, n_results)
+        except Exception:
+            return ""
+
+    def get_user_context_for_step(self, step: str, max_chars: int = 2000) -> str:
+        """获取步骤专用的用户上下文（限制长度）。"""
+        ctx = self.get_user_context(step)
+        if len(ctx) > max_chars:
+            ctx = ctx[:max_chars] + "\n\n...(用户信息库检索结果已截断)"
+        return ctx
+
+    def get_library_stats(self) -> dict:
+        """获取用户信息库统计（用于 UI 展示）。"""
+        try:
+            stats = self.user_library.get_stats()
+            return {
+                "total_documents": stats.total_documents,
+                "total_chunks": stats.total_chunks,
+                "total_chars": stats.total_chars,
+                "sources": stats.sources,
+            }
+        except Exception:
+            return {"total_documents": 0, "total_chunks": 0, "total_chars": 0, "sources": []}
+
+    def add_to_library(self, file_path: str, label: str = "", doc_type: str = "") -> List[str]:
+        """向用户信息库添加文件。"""
+        return self.user_library.add_file(file_path, label=label, doc_type_override=doc_type)
+
+    def add_text_to_library(self, text: str, source_name: str, label: str = "", doc_type: str = "") -> List[str]:
+        """向用户信息库添加文本。"""
+        return self.user_library.add_text(text, source_name=source_name, label=label, doc_type_override=doc_type)
+
+    def remove_from_library(self, source_name: str) -> int:
+        """从用户信息库中移除文件。"""
+        return self.user_library.remove_by_source(source_name)
+
+    def clear_library(self) -> int:
+        """清空用户信息库。"""
+        return self.user_library.clear()

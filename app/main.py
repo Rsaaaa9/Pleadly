@@ -59,6 +59,18 @@ T = {
     "privacy_title":  {"zh": "### 🔒 隐私说明", "en": "### 🔒 Privacy"},
     "privacy_text":   {"zh": "你输入的数据仅用于本次分析，不会存储。所有AI调用通过DeepSeek API。", "en": "Your data is used only for this analysis session and is never stored. All AI calls go through the DeepSeek API."},
 
+    # ── v2: Library UI ──
+    "lib_accordion":     {"zh": "📂 我的信息库（上传简历/项目/作品集，自动分块索引）", "en": "📂 My Info Library (upload resume/projects/portfolio - auto chunk & index)"},
+    "lib_upload":        {"zh": "上传文档到此（简历 / 项目描述 / 作品集 / 证书 — docx/pdf/txt/md）", "en": "Upload documents (resume/project/portfolio/certificate - docx/pdf/txt/md)"},
+    "lib_type_label":    {"zh": "文档类型", "en": "Document Type"},
+    "lib_type_choices":  {"zh": ["自动检测", "简历", "项目文档", "证书", "其他"], "en": ["Auto-detect", "Resume", "Project Doc", "Certificate", "Other"]},
+    "lib_label_label":   {"zh": "标签（可选）", "en": "Label (optional)"},
+    "lib_label_ph":      {"zh": "例如: 校招版简历 / Pleadly详细文档", "en": "e.g. Campus Resume / Pleadly Details"},
+    "lib_add_btn":       {"zh": "📥 添加到信息库", "en": "📥 Add to Library"},
+    "lib_stats_btn":     {"zh": "📊 查看状态", "en": "📊 View Stats"},
+    "lib_clear_btn":     {"zh": "🗑️ 清空信息库", "en": "🗑️ Clear Library"},
+    "lib_default":       {"zh": "📭 信息库为空。上传你的简历、项目描述、作品集来增强分析质量。", "en": "📭 Library is empty. Upload your resume, projects, or portfolio to enhance analysis quality."},
+
     "default_output": {
         "zh": "👆 输入简历和JD后点击分析按钮。完整分析需要1-3分钟。\n\n**支持的分步功能：**\n- ① ATS关键词检测\n- ② 岗位匹配度评分（6维度百分制）\n- ③ JD全维度拆解（含公司背景联网搜索）\n- ④ 简历对照诊断（匹配/冗余/缺失/风险）\n- ⑥ 差距分析与学习计划\n- ⑦ 全流程面试准备（含真实面经搜索）",
         "en": "👆 Paste your resume and JD, then click the analysis button. Full analysis takes 1-3 minutes.\n\n**Available step-by-step features:**\n- ① ATS Keyword Detection\n- ② Job Match Score (6-dimension weighted)\n- ③ JD Deep Analysis (with company background research)\n- ④ Resume Gap Diagnosis (match / redundancy / gap / risk)\n- ⑥ Learning Plan (gap → resource → timeline)\n- ⑦ Interview Prep (with real interview experience search)"
@@ -98,7 +110,8 @@ def step_ats_check(resume: str, jd: str, lang: str = "zh"):
         return T["err_no_resume_jd"][lang]
     agent.set_input(resume, jd)
     user_input = AnalysisInput(resume_text=resume, jd_text=jd)
-    result = run_step("ats_check", user_input)
+    user_ctx = agent.get_user_context_for_step("ats_check")
+    result = run_step("ats_check", user_input, user_context=user_ctx)
     agent.state.step_results["ats_check"] = result.content
     return result.content
 
@@ -107,7 +120,8 @@ def step_match_score(resume: str, jd: str, lang: str = "zh"):
         return T["err_no_resume_jd"][lang]
     agent.set_input(resume, jd)
     user_input = AnalysisInput(resume_text=resume, jd_text=jd)
-    result = run_step("match_score", user_input)
+    user_ctx = agent.get_user_context_for_step("match_score")
+    result = run_step("match_score", user_input, user_context=user_ctx)
     agent.state.step_results["match_score"] = result.content
     return result.content
 
@@ -122,7 +136,7 @@ def step_jd_analysis(resume: str, jd: str, company_hint: str, lang: str = "zh"):
         status += T["status_found"][lang] + company_hint + "\n"
     user_input = AnalysisInput(resume_text=resume, jd_text=jd)
     rag_ctx = agent.get_rag_context()
-    result = run_step("jd_analysis", user_input, rag_context=rag_ctx)
+    result = run_step("jd_analysis", user_input, rag_context=rag_ctx, user_context="")
     agent.state.step_results["jd_analysis"] = result.content
     return status + "\n" + result.content
 
@@ -135,9 +149,11 @@ def step_resume_diagnosis(resume: str, jd: str, lang: str = "zh"):
         agent.state.step_results["jd_analysis"] = r.content
     user_input = AnalysisInput(resume_text=resume, jd_text=jd)
     user_input.extra_instructions = agent.state.step_results.get("jd_analysis", "")
+    user_ctx = agent.get_user_context_for_step("resume_diagnosis")
     result = run_step(
         "resume_diagnosis", user_input,
-        previous_steps={"jd_analysis": agent.state.step_results.get("jd_analysis", "")}
+        previous_steps={"jd_analysis": agent.state.step_results.get("jd_analysis", "")},
+        user_context=user_ctx,
     )
     agent.state.step_results["resume_diagnosis"] = result.content
     return result.content
@@ -148,9 +164,11 @@ def step_learning_plan(resume: str, jd: str, lang: str = "zh"):
     if "resume_diagnosis" not in agent.state.step_results:
         step_resume_diagnosis(resume, jd, lang)
     user_input = AnalysisInput(resume_text=resume, jd_text=jd)
+    user_ctx = agent.get_user_context_for_step("learning_plan")
     result = run_step(
         "learning_plan", user_input,
-        previous_steps={"diagnosis": agent.state.step_results.get("resume_diagnosis", "")}
+        previous_steps={"diagnosis": agent.state.step_results.get("resume_diagnosis", "")},
+        user_context=user_ctx,
     )
     agent.state.step_results["learning_plan"] = result.content
     return result.content
@@ -171,12 +189,14 @@ def step_interview_prep(resume: str, jd: str, company_hint: str, lang: str = "zh
         step_resume_diagnosis(resume, jd, lang)
     user_input = AnalysisInput(resume_text=resume, jd_text=jd)
     rag_ctx = agent.get_rag_context()
+    user_ctx = agent.get_user_context_for_step("interview_prep", max_chars=3000)
     result = run_step(
         "interview_prep", user_input, rag_context=rag_ctx,
         previous_steps={
             "jd_analysis": agent.state.step_results.get("jd_analysis", ""),
             "diagnosis": agent.state.step_results.get("resume_diagnosis", ""),
-        }
+        },
+        user_context=user_ctx,
     )
     agent.state.step_results["interview_prep"] = result.content
     return status + result.content
@@ -265,6 +285,22 @@ def build_lang_switch(lang):
         gr.update(value=t("privacy_title")),
         # privacy_text_md (Markdown)
         gr.update(value=t("privacy_text")),
+        # lib_accordion (Accordion)
+        gr.update(label=t("lib_accordion")),
+        # lib_file (File)
+        gr.update(label=t("lib_upload")),
+        # lib_doc_type (Dropdown)
+        gr.update(label=t("lib_type_label"), choices=t("lib_type_choices")),
+        # lib_label_input (Textbox)
+        gr.update(label=t("lib_label_label"), placeholder=t("lib_label_ph")),
+        # lib_add_btn_c (Button)
+        gr.update(value=t("lib_add_btn")),
+        # lib_stats_btn_c (Button)
+        gr.update(value=t("lib_stats_btn")),
+        # lib_clear_btn_c (Button)
+        gr.update(value=t("lib_clear_btn")),
+        # lib_stats_output (Markdown)
+        gr.update(value=t("lib_default")),
         # lang_state (State)
         lang,
     )
@@ -316,6 +352,31 @@ with gr.Blocks(theme=theme, title="Pleadly — Smart Job Search") as app:
         placeholder=T["company_ph"]["zh"], show_label=False,
     )
 
+    # ── v2: 用户信息库 ──
+    with gr.Accordion(T["lib_accordion"]["zh"], open=False) as lib_accordion:
+        with gr.Row():
+            lib_file = gr.File(
+                label=T["lib_upload"]["zh"],
+                file_types=[".docx", ".pdf", ".txt", ".md"],
+            )
+        with gr.Row():
+            lib_doc_type = gr.Dropdown(
+                choices=T["lib_type_choices"]["zh"],
+                value=T["lib_type_choices"]["zh"][0],
+                label=T["lib_type_label"]["zh"],
+                scale=2,
+            )
+            lib_label_input = gr.Textbox(
+                label=T["lib_label_label"]["zh"],
+                placeholder=T["lib_label_ph"]["zh"],
+                scale=3,
+            )
+        with gr.Row():
+            lib_add_btn_c = gr.Button(T["lib_add_btn"]["zh"], variant="secondary", size="sm")
+            lib_stats_btn_c = gr.Button(T["lib_stats_btn"]["zh"], size="sm")
+            lib_clear_btn_c = gr.Button(T["lib_clear_btn"]["zh"], size="sm", variant="stop")
+        lib_stats_output = gr.Markdown(value=T["lib_default"]["zh"])
+
     with gr.Row():
         run_all_btn = gr.Button(T["run_all_btn"]["zh"], variant="primary", size="lg")
         clear_btn = gr.Button(T["clear_btn"]["zh"], size="lg")
@@ -353,7 +414,7 @@ with gr.Blocks(theme=theme, title="Pleadly — Smart Job Search") as app:
     # EVENT BINDINGS
     # ═════════════════════════════════════════════
 
-    # All components that need language updates (26 outputs)
+    # All components that need language updates (35 outputs)
     ui_components = [
         title_md, hero_desc_md,
         resume_label_md, resume_input, resume_file,
@@ -366,6 +427,9 @@ with gr.Blocks(theme=theme, title="Pleadly — Smart Job Search") as app:
         step1_btn, step2_btn, step3_btn, step4_btn, step6_btn, step7_btn,
         usage_title_md, usage_steps_md,
         privacy_title_md, privacy_text_md,
+        lib_accordion, lib_file, lib_doc_type, lib_label_input,
+        lib_add_btn_c, lib_stats_btn_c, lib_clear_btn_c,
+        lib_stats_output,
         lang_state,
     ]
 
@@ -380,6 +444,70 @@ with gr.Blocks(theme=theme, title="Pleadly — Smart Job Search") as app:
         return ""
 
     resume_file.change(handle_file_upload, inputs=[resume_file], outputs=[resume_input])
+
+    # ── v2: User Library Handlers ──
+
+    def handle_library_add(file, doc_type_str: str, label: str, lang: str):
+        """向用户信息库添加文件。"""
+        if file is None:
+            return gr.update(value={"zh": "⚠️ 请先选择文件", "en": "⚠️ Please select a file first"}[lang])
+        try:
+            # Map UI selection to doc_type
+            type_map_zh = {"自动检测": "", "简历": "resume", "项目文档": "project", "证书": "certificate", "其他": "other"}
+            type_map_en = {"Auto-detect": "", "Resume": "resume", "Project Doc": "project", "Certificate": "certificate", "Other": "other"}
+            type_map = type_map_zh if lang == "zh" else type_map_en
+            override = type_map.get(doc_type_str, "")
+
+            chunk_ids = agent.add_to_library(file.name, label=label, doc_type=override)
+            return build_library_stats(lang)
+        except Exception as e:
+            return gr.update(value={"zh": f"❌ 添加失败: {str(e)}", "en": f"❌ Failed: {str(e)}"}[lang])
+
+    def build_library_stats(lang: str):
+        """组装信息库统计显示。"""
+        try:
+            stats = agent.get_library_stats()
+            if stats["total_documents"] == 0:
+                return gr.update(value={"zh": "📭 信息库为空。上传你的简历、项目描述、作品集等。", "en": "📭 Library is empty. Upload your resume, projects, portfolio, etc."}[lang])
+
+            lines = [{"zh": f"## 📂 信息库状态", "en": f"## 📂 Library Status"}[lang]]
+            lines.append({"zh": f"- 📄 文档数: **{stats['total_documents']}** 个", "en": f"- 📄 Documents: **{stats['total_documents']}**"}[lang])
+            lines.append({"zh": f"- 🧩 分块数: **{stats['total_chunks']}** 个", "en": f"- 🧩 Chunks: **{stats['total_chunks']}**"}[lang])
+            lines.append({"zh": f"- 📝 总字符数: **{stats['total_chars']:,}**", "en": f"- 📝 Total chars: **{stats['total_chars']:,}**"}[lang])
+            if stats["sources"]:
+                lines.append({"zh": "\n| 文档 | 类型 | 分块数 | 大小 |", "en": "\n| Document | Type | Chunks | Size |"}[lang])
+                lines.append({"zh": "|------|------|--------|------|", "en": "|------|------|--------|------|"}[lang])
+                for src in stats["sources"]:
+                    dtype = src.get("doc_type", "?")
+                    label = src.get("label", "")
+                    name = f"{src['source']} ({label})" if label else src["source"]
+                    lines.append(f"| {name} | {dtype} | {src['chunks']} | {src['chars']:,} |")
+            return gr.update(value="\n".join(lines))
+        except Exception as e:
+            return gr.update(value={"zh": f"❌ 获取状态失败: {e}", "en": f"❌ Failed: {e}"}[lang])
+
+    def handle_library_clear(lang: str):
+        """清空用户信息库。"""
+        count = agent.clear_library()
+        if lang == "zh":
+            return gr.update(value=f"✅ 已清空 {count} 个分块。信息库已重置。")
+        return gr.update(value=f"✅ Cleared {count} chunks. Library reset.")
+
+    lib_add_btn_c.click(
+        handle_library_add,
+        inputs=[lib_file, lib_doc_type, lib_label_input, lang_state],
+        outputs=[lib_stats_output],
+    )
+    lib_stats_btn_c.click(
+        build_library_stats,
+        inputs=[lang_state],
+        outputs=[lib_stats_output],
+    )
+    lib_clear_btn_c.click(
+        handle_library_clear,
+        inputs=[lang_state],
+        outputs=[lib_stats_output],
+    )
 
     # ── Run All ──
     run_all_btn.click(
