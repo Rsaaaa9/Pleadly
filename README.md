@@ -113,7 +113,7 @@ MIT — 自由使用、修改、分发。保留署名。
 
 ### What is Pleadly?
 
-**Pleadly** (Pleadly) is an AI-powered full-cycle job search system designed for new graduates. Paste your resume and a job description — an AI hiring manager runs you through the complete analysis from application to onboarding.
+**Pleadly** (**我求你了**) is an AI-powered full-cycle job search system designed for new graduates. Paste your resume and a job description — an AI hiring manager runs you through the complete analysis from application to onboarding.
 
 ### The 10-Step Workflow
 
