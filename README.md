@@ -28,7 +28,7 @@ short_description: AI-powered full-cycle career assistant — from JD to Day One
 
 ### 这是什么
 
-**我求你了**（英文名 **Pleadly** = Plead + ly，「聪明地求职」）是一套面向应届生的全流程 AI 求职系统。输入你的简历和岗位 JD，AI 招聘经理帮你跑完从投递到入职的完整分析。
+**我求你了**（ **Pleadly** ）是一套面向应届生的全流程 AI 求职系统。输入你的简历和岗位 JD，AI 招聘经理帮你跑完从投递到入职的完整分析。
 
 ### 十步工作流
 
@@ -113,7 +113,7 @@ MIT — 自由使用、修改、分发。保留署名。
 
 ### What is Pleadly?
 
-**Pleadly** (Plead + ly = "pleading smartly") is an AI-powered full-cycle job search system designed for new graduates. Paste your resume and a job description — an AI hiring manager runs you through the complete analysis from application to onboarding.
+**Pleadly** (Pleadly) is an AI-powered full-cycle job search system designed for new graduates. Paste your resume and a job description — an AI hiring manager runs you through the complete analysis from application to onboarding.
 
 ### The 10-Step Workflow
 
